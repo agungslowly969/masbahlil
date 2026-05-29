@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Panel — Voidra Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary:#FF6B35;--primary-light:#FF8C5A;--primary-pale:#FFF0EB;
+  --bg:#F8F7F5;--bg3:#F2F1EE;--border:#E8E6E1;--border2:#EDE9E3;
+  --text:#1A1A1A;--text2:#4A4A4A;--text3:#8A8A8A;--text4:#B8B4AD;
+  --teal:#0D9488;--teal-soft:#CCFBF1;
+  --radius:20px;--radius-sm:12px;--radius-xs:8px;
+  --shadow:0 2px 8px rgba(0,0,0,0.06),0 8px 32px rgba(0,0,0,0.08);
+  --shadow-lg:0 4px 16px rgba(0,0,0,0.08),0 16px 48px rgba(0,0,0,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+
+/* LOGIN SCREEN */
+.login-wrap{width:100%;max-width:400px;animation:fadeUp .5s ease both}
+.login-card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:40px 32px;box-shadow:var(--shadow-lg);text-align:center}
+.login-icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--primary-pale),#FFE4D9);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 20px}
+.login-card h1{font-weight:800;font-size:1.3rem;letter-spacing:-0.02em;margin-bottom:6px}
+.login-card p{font-size:0.83rem;color:var(--text3);margin-bottom:28px}
+.inp{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:13px 16px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;color:var(--text);background:#fff;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:14px}
+.inp:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(255,107,53,0.1)}
+.inp::placeholder{color:var(--text4)}
+.btn-primary{width:100%;padding:14px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:0.95rem;cursor:pointer;transition:all .2s;letter-spacing:-0.01em}
+.btn-primary:hover{background:var(--primary-light);transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,107,53,0.3)}
+.btn-primary:active{transform:translateY(0)}
+.err-msg{background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;border-radius:var(--radius-xs);padding:10px 14px;font-size:0.8rem;font-weight:600;margin-bottom:14px;display:none}
+
+/* ADMIN PANEL */
+.admin-wrap{width:100%;max-width:600px;animation:fadeUp .4s ease both;display:none}
+.admin-header{background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.admin-header-left{display:flex;align-items:center;gap:12px}
+.admin-badge{background:linear-gradient(135deg,#1a1a2e,#0f3460);color:#fff;border-radius:50px;padding:5px 14px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em}
+.admin-title{font-weight:800;font-size:1rem}
+.btn-logout{background:var(--bg3);border:1.5px solid var(--border);border-radius:50px;padding:7px 16px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:0.75rem;color:var(--text3);cursor:pointer;transition:all .2s}
+.btn-logout:hover{border-color:#DC2626;color:#DC2626;background:#FEF2F2}
+
+.section-card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:24px;box-shadow:var(--shadow);margin-bottom:16px}
+.section-title{font-weight:800;font-size:0.95rem;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.section-desc{font-size:0.78rem;color:var(--text3);margin-bottom:20px}
+.field-label{font-weight:700;font-size:0.78rem;color:var(--text2);letter-spacing:0.02em;margin-bottom:8px;display:block;margin-top:14px}
+.field-label:first-of-type{margin-top:0}
+textarea.inp{resize:none;min-height:90px;line-height:1.6;margin-bottom:0}
+.btn-save{padding:12px 24px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:0.88rem;cursor:pointer;transition:all .2s;margin-top:16px}
+.btn-save:hover{background:var(--primary-light);transform:translateY(-1px)}
+.btn-danger{padding:12px 24px;border:none;border-radius:var(--radius-sm);background:#FEF2F2;color:#DC2626;border:1.5px solid #FECACA;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:0.88rem;cursor:pointer;transition:all .2s;margin-top:8px;width:100%}
+.btn-danger:hover{background:#DC2626;color:#fff}
+
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:0}
+.stat-box{background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border2);padding:14px;text-align:center}
+.stat-val{font-weight:800;font-size:1.1rem;color:var(--text)}
+.stat-lbl{font-size:0.7rem;color:var(--text3);margin-top:3px}
+
+.donation-list{display:flex;flex-direction:column;gap:0;max-height:300px;overflow-y:auto}
+.don-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border2);font-size:0.83rem}
+.don-item:last-child{border-bottom:none}
+.don-name{font-weight:700}
+.don-amt{font-weight:800;color:var(--primary)}
+.don-time{font-size:0.72rem;color:var(--text4);margin-top:2px}
+.empty-list{text-align:center;padding:24px;color:var(--text4);font-size:0.83rem}
+
+.pending-img{width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid var(--border2);margin:8px 0;cursor:pointer}
+.btn-verify{padding:7px 14px;border:none;border-radius:var(--radius-xs);background:var(--teal);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;margin-right:6px;transition:all .2s}
+.btn-verify:hover{opacity:0.85}
+.btn-reject{padding:7px 14px;border:none;border-radius:var(--radius-xs);background:#FEF2F2;color:#DC2626;border:1.5px solid #FECACA;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all .2s}
+.btn-reject:hover{background:#DC2626;color:#fff}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:#fff;border-radius:50px;padding:12px 22px;font-size:0.82rem;font-weight:600;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,0.2);display:flex;align-items:center;gap:6px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.divider{height:1px;background:var(--border2);margin:16px 0}
+
+/* OFFLINE BANNER */
+.offline-banner{position:fixed;top:0;left:0;right:0;background:#DC2626;color:#fff;text-align:center;padding:10px 16px;font-size:0.82rem;font-weight:700;z-index:9999;display:none}
+.offline-banner.show{display:block}
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="offline-banner" class="offline-banner">⚠️ Koneksi terputus. Periksa internet kamu.</div>
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-icon">🔐</div>
+    <h1>Admin Panel</h1>
+    <p>Masuk dengan akun Google kamu untuk mengakses panel admin Voidra Studio</p>
+    <div class="err-msg" id="err-msg" style="display:none"></div>
+    <button class="btn-primary" onclick="doLogin()" style="margin-top:4px;display:flex;align-items:center;justify-content:center;gap:10px"><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#fff" d="M9 3.48c1.69 0 2.83.73 3.48 1.34l2.54-2.48C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l2.91 2.26C4.6 5.05 6.62 3.48 9 3.48z"/><path fill="#fff" d="M17.64 9.2c0-.74-.06-1.28-.19-1.84H9v3.34h4.96c-.1.83-.64 2.08-1.84 2.92l2.84 2.2c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#fff" d="M3.88 10.78A5.54 5.54 0 0 1 3.58 9c0-.62.11-1.22.29-1.78L.96 4.96A9.008 9.008 0 0 0 0 9c0 1.45.35 2.82.96 4.04l2.92-2.26z"/><path fill="#fff" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.84-2.2c-.76.53-1.78.9-3.12.9-2.38 0-4.4-1.57-5.12-3.74L.97 13.04C2.45 15.98 5.48 18 9 18z"/></svg> Masuk dengan Google</button>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-wrap" id="admin-wrap">
+
+  <!-- Header -->
+  <div class="admin-header">
+    <div class="admin-header-left">
+      <span class="admin-badge">ADMIN</span>
+      <span class="admin-title">Voidra Studio</span>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">Keluar</button>
+  </div>
+
+  <!-- Pending Verifikasi -->
+  <div class="section-card" id="pending-section">
+    <div class="section-title">⏳ Menunggu Verifikasi <span id="pending-badge" style="background:#FEF3C7;color:#D97706;border-radius:50px;padding:2px 10px;font-size:0.7rem;font-weight:700;margin-left:6px">0</span></div>
+    <div class="section-desc">Donasi yang perlu diverifikasi bukti transfernya</div>
+    <div class="donation-list" id="pending-list">
+      <div class="empty-list">Tidak ada donasi pending</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="section-card">
+    <div class="section-title">📊 Statistik Donasi</div>
+    <div class="section-desc">Ringkasan donasi yang masuk</div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-val" id="s-count">0</div><div class="stat-lbl">Total Donasi</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-amount">Rp 0</div><div class="stat-lbl">Total Terkumpul</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-supporter">0</div><div class="stat-lbl">Supporter</div></div>
+    </div>
+  </div>
+
+  <!-- Edit Profil -->
+  <div class="section-card">
+    <div class="section-title">✏️ Edit Profil</div>
+    <div class="section-desc">Bio akan langsung tampil di halaman utama</div>
+    <span class="field-label">Bio / Deskripsi Profil</span>
+    <textarea class="inp" id="profile-bio-input" placeholder="Tulis bio singkat kamu di sini..." style="margin-bottom:0"></textarea>
+    <button class="btn-save" onclick="saveProfile()">💾 Simpan Profil</button>
+  </div>
+
+  <!-- Edit Goal -->
+  <div class="section-card">
+    <div class="section-title">🎯 Edit Goal</div>
+    <div class="section-desc">Perubahan akan langsung tampil di halaman utama</div>
+    <span class="field-label">Judul Goal</span>
+    <input class="inp" type="text" id="goal-title" placeholder="🎯 Goal Bulan Ini">
+    <span class="field-label">Deskripsi</span>
+    <textarea class="inp" id="goal-desc" placeholder="Deskripsi goalmu..."></textarea>
+    <span class="field-label">Target Nominal (Rp)</span>
+    <input class="inp" type="number" id="goal-target" placeholder="1500000" style="margin-bottom:0">
+    <button class="btn-save" onclick="saveGoal()">💾 Simpan Goal</button>
+  </div>
+
+  <!-- Riwayat Donasi -->
+  <div class="section-card">
+    <div class="section-title">💛 Riwayat Donasi</div>
+    <div class="section-desc">Daftar donasi yang masuk</div>
+    <div class="donation-list" id="don-list">
+      <div class="empty-list">Belum ada donasi</div>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-save" onclick="exportCSV()" style="flex:1;margin-top:0;background:var(--teal)">📥 Export CSV</button>
+      <button class="btn-danger" onclick="clearDonations()" style="flex:1;margin-top:0">🗑️ Hapus Semua</button>
+    </div>
+  </div>
+
+  <!-- Keamanan Akun -->
+  <div class="section-card">
+    <div class="section-title">🔒 Keamanan Akun</div>
+    <div class="section-desc">Panel admin dilindungi oleh Google Sign-In</div>
+    <div style="background:var(--teal-soft);border:1px solid #99F6E4;border-radius:var(--radius-sm);padding:14px 16px;font-size:0.82rem;color:var(--teal);line-height:1.7">
+      ✅ Login kamu diamankan langsung oleh <strong>Google</strong>.<br>
+      Untuk ganti password atau aktifkan 2FA, kunjungi <a href="https://myaccount.google.com/security" target="_blank" style="color:var(--teal);font-weight:700">myaccount.google.com/security</a>.
+    </div>
+  </div>
+
+  <!-- Riwayat Ditolak -->
+  <div class="section-card">
+    <div class="section-title">❌ Riwayat Ditolak</div>
+    <div class="section-desc">Donasi yang pernah ditolak</div>
+    <div class="donation-list" id="rejected-list">
+      <div class="empty-list">Belum ada donasi ditolak</div>
+    </div>
+  </div>
+
+  <!-- Backup & Restore -->
+  <div class="section-card">
+    <div class="section-title">💾 Backup & Restore</div>
+    <div class="section-desc">Backup data ke file lokal sebagai cadangan, atau restore dari file backup sebelumnya</div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn-save" onclick="exportBackup()" style="flex:1;margin-top:0;background:var(--teal)">📥 Download Backup</button>
+      <button class="btn-save" onclick="restoreBackup()" style="flex:1;margin-top:0;background:#6366F1;color:#fff">📤 Restore Backup</button>
+    </div>
+  </div>
+
+  <p style="text-align:center;font-size:0.72rem;color:var(--text4);margin-top:8px">
+    Admin Panel · Voidra Studio · <a href="index.html" style="color:var(--primary);text-decoration:none">← Lihat halaman publik</a>
+  </p>
+</div>
+
+<div class="toast" id="toast-el"><span id="toast-ico" style="font-size:1rem"></span><span id="toast-msg"></span></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, startAfter, serverTimestamp, where, writeBatch } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBj8jLp7CeHSHIeDp1itB85v6n6q0KG9K4",
+  authDomain: "voidra-studio.firebaseapp.com",
+  projectId: "voidra-studio",
+  storageBucket: "voidra-studio.firebasestorage.app",
+  messagingSenderId: "314348715690",
+  appId: "1:314348715690:web:1a20b0e119918149fc5ad3",
+  measurementId: "G-191G9DCSW6"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// =====================
+// HELPERS
+// =====================
+function timeAgo(ts) {
+  if (!ts) return 'Baru saja';
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60) return 'Baru saja';
+  if (diff < 3600) return Math.floor(diff/60) + ' menit lalu';
+  if (diff < 86400) return Math.floor(diff/3600) + ' jam lalu';
+  return Math.floor(diff/86400) + ' hari lalu';
+}
+function fullDate(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleString('id-ID', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg, ico='✓') {
+  const el = document.getElementById('toast-el');
+  const icoEl = document.getElementById('toast-ico');
+  const msgEl = document.getElementById('toast-msg');
+  if (icoEl) icoEl.textContent = ico;
+  if (msgEl) msgEl.textContent = msg;
+  else el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// =====================
+// AUTH
+// =====================
+async function doLogin() {
+  const errEl = document.getElementById('err-msg');
+  errEl.style.display = 'none';
+  try {
+    const result = await signInWithPopup(auth, provider);
+    // Login berhasil — onAuthStateChanged akan handle panel visibility
+  } catch(e) {
+    console.error('Login error:', e);
+    if (e.code === 'auth/popup-closed-by-user') {
+      errEl.textContent = '⚠️ Login dibatalkan. Coba lagi.';
+    } else if (e.code === 'auth/network-request-failed') {
+      errEl.textContent = '❌ Tidak ada koneksi internet.';
+    } else if (e.code === 'auth/popup-blocked') {
+      errEl.textContent = '❌ Popup diblokir browser. Izinkan popup untuk site ini.';
+    } else {
+      errEl.textContent = '❌ Login gagal: ' + (e.message || 'Coba lagi');
+    }
+    errEl.style.display = 'block';
+  }
+}
+
+async function doLogout() {
+  await signOut(auth);
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    try {
+      // Cek akses admin dari Firestore — email tidak di-hardcode di kode publik
+      const adminSnap = await getDoc(doc(db, 'admin', 'config'));
+      const adminEmails = (adminSnap.exists() && adminSnap.data().emails) ? adminSnap.data().emails : [];
+      if (!adminEmails.includes(user.email)) {
+        toast('❌ Akun ini tidak memiliki akses admin');
+        await signOut(auth);
+        const errEl = document.getElementById('err-msg');
+        errEl.textContent = '❌ Akun ' + user.email + ' tidak memiliki akses admin.';
+        errEl.style.display = 'block';
+        return;
+      }
+    } catch(e) {
+      // Jika gagal baca Firestore (rules menolak), berarti bukan admin
+      toast('❌ Tidak dapat memverifikasi akses admin');
+      await signOut(auth);
+      const errEl = document.getElementById('err-msg');
+      errEl.textContent = '❌ Gagal verifikasi akses. Pastikan kamu admin yang sah.';
+      errEl.style.display = 'block';
+      return;
+    }
+    document.getElementById('login-wrap').style.display = 'none';
+    document.getElementById('admin-wrap').style.display = 'block';
+    document.querySelector('.admin-title').textContent = 'Voidra Studio (' + (user.displayName || user.email) + ')';
+    loadAdminData();
+    startPendingListener();
+  } else {
+    document.getElementById('login-wrap').style.display = '';
+    document.getElementById('admin-wrap').style.display = 'none';
+  }
+});
+
+// Offline detection
+function updateOnlineStatus() {
+  const banner = document.getElementById('offline-banner');
+  if (!banner) return;
+  if (!navigator.onLine) banner.classList.add('show');
+  else banner.classList.remove('show');
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// =====================
+// ADMIN DATA
+// =====================
+async function loadAdminData() {
+  try {
+    // Stats
+    const statsSnap = await getDoc(doc(db, 'settings', 'stats'));
+    if (statsSnap.exists()) {
+      const s = statsSnap.data();
+      const totalDon = s.totalDonations || 0;
+      const totalAmt = s.totalAmount || 0;
+      const totalSup = (s.supporters || []).length;
+      document.getElementById('s-count').textContent = totalDon;
+      document.getElementById('s-amount').textContent = 'Rp ' + totalAmt.toLocaleString('id-ID');
+      document.getElementById('s-supporter').textContent = totalSup;
+      // Empty state hint
+      if (totalDon === 0) {
+        ['s-count','s-amount','s-supporter'].forEach(id => {
+          document.getElementById(id).closest('.stat-box').style.opacity = '0.5';
+        });
+        const grid = document.querySelector('.stats-grid');
+        if (grid && !grid.nextElementSibling?.classList.contains('stats-empty-note')) {
+          const note = document.createElement('div');
+          note.className = 'stats-empty-note';
+          note.style.cssText = 'text-align:center;font-size:0.78rem;color:var(--text4);margin-top:12px;padding:8px;background:var(--bg3);border-radius:var(--radius-xs)';
+          note.textContent = 'Belum ada donasi masuk. Stats akan otomatis terupdate.';
+          grid.after(note);
+        }
+      }
+    }
+
+    // Goal settings
+    const profileSnap = await getDoc(doc(db, 'settings', 'profile'));
+    if (profileSnap.exists()) {
+      const p = profileSnap.data();
+      if (p.goalTitle) document.getElementById('goal-title').value = p.goalTitle;
+      if (p.goalDesc) document.getElementById('goal-desc').value = p.goalDesc;
+      if (p.goalTarget) document.getElementById('goal-target').value = p.goalTarget;
+      if (p.bio && document.getElementById('profile-bio-input')) document.getElementById('profile-bio-input').value = p.bio;
+    }
+
+    // Donations list dengan pagination
+    await loadDonationList(false);
+
+    // Rejected — Bug 4 fix: tambahkan await agar error bisa ditangkap
+    await loadRejected();
+  } catch(e) {
+    console.error('loadAdminData error', e);
+    toast('❌ Gagal memuat data: ' + e.message);
+  }
+}
+
+let _lastAdminDonDoc = null;
+let _allAdminDonLoaded = false;
+
+async function loadDonationList(append = false) {
+  const donList = document.getElementById('don-list');
+  if (!append) {
+    _lastAdminDonDoc = null;
+    _allAdminDonLoaded = false;
+    donList.innerHTML = '';
+  }
+  try {
+    let q = query(collection(db, 'donations'), orderBy('ts', 'desc'), limit(15));
+    if (append && _lastAdminDonDoc) q = query(collection(db, 'donations'), orderBy('ts', 'desc'), startAfter(_lastAdminDonDoc), limit(15));
+
+    const donSnap = await getDocs(q);
+
+    // Hapus tombol load more lama kalau ada
+    const oldBtn = document.getElementById('don-load-more');
+    if (oldBtn) oldBtn.remove();
+
+    if (donSnap.empty && !append) {
+      donList.innerHTML = '<div class="empty-list">Belum ada donasi</div>';
+      return;
+    }
+
+    if (donSnap.docs.length < 15) _allAdminDonLoaded = true;
+    if (donSnap.docs.length > 0) _lastAdminDonDoc = donSnap.docs[donSnap.docs.length - 1];
+
+    donSnap.forEach(d => {
+      const data = d.data();
+      const div = document.createElement('div');
+      div.className = 'don-item';
+      div.innerHTML = `
+        <div style="flex:1">
+          <div class="don-name">${esc(data.name)}</div>
+          <div class="don-time" title="${fullDate(data.ts)}" style="cursor:default">${timeAgo(data.ts)}</div>
+          ${data.msg ? `<div style="font-size:0.78rem;color:var(--text2);margin-top:2px">${esc(data.msg)}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="don-amt">Rp ${(data.amt||0).toLocaleString('id-ID')}</span>
+          <button onclick="deleteDonation('${d.id}', ${data.amt||0}, '${esc(data.name)}')" style="background:none;border:none;color:var(--text4);cursor:pointer;font-size:0.75rem;padding:2px 6px;border-radius:4px;transition:color .2s" onmouseover="this.style.color='#DC2626'" onmouseout="this.style.color='var(--text4)'">🗑️</button>
+        </div>`;
+      donList.appendChild(div);
+    });
+
+    // Tombol load more
+    if (!_allAdminDonLoaded) {
+      const btnWrap = document.createElement('div');
+      btnWrap.id = 'don-load-more';
+      btnWrap.style.cssText = 'text-align:center;padding:10px 0 2px';
+      btnWrap.innerHTML = `<button onclick="loadDonationList(true)" style="background:none;border:none;color:var(--primary);font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;padding:6px 16px;border-radius:50px;transition:all .2s">Lihat lebih banyak ↓</button>`;
+      donList.after(btnWrap);
+    }
+  } catch(e) {
+    toast('❌ Gagal memuat riwayat: ' + e.message);
+  }
+}
+
+async function loadPending() {
+  const list = document.getElementById('pending-list');
+  const badge = document.getElementById('pending-badge');
+  try {
+    const snap = await getDocs(query(collection(db, 'pending'), orderBy('createdAt', 'desc')));
+    if (snap.empty) {
+      list.innerHTML = '<div class="empty-list">Tidak ada donasi pending</div>';
+      badge.textContent = '0';
+      return;
+    }
+    badge.textContent = snap.size;
+    list.innerHTML = '';
+    snap.forEach(d => {
+      const p = d.data();
+      const div = document.createElement('div');
+      div.className = 'don-item';
+      div.id = 'pending-item-' + d.id;
+      div.style.cssText = 'flex-direction:column;align-items:flex-start;gap:8px';
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:flex-start">
+          <div>
+            <div class="don-name">${esc(p.name)}</div>
+            <div class="don-time" title="${fullDate(p.ts)}" style="cursor:default">${timeAgo(p.ts)}</div>
+            ${p.email ? `<div style="font-size:0.75rem;color:var(--text3)">${esc(p.email)}</div>` : ''}
+            ${p.msg ? `<div style="font-size:0.78rem;color:var(--text2);margin-top:4px">${esc(p.msg)}</div>` : ''}
+          </div>
+          <span class="don-amt">Rp ${(p.amt||0).toLocaleString('id-ID')}</span>
+        </div>
+        ${p.imgUrl ? `<img class="pending-img" src="${esc(encodeURI(p.imgUrl))}" alt="Bukti TF" onclick="window.open('${esc(encodeURI(p.imgUrl))}','_blank')">` : ''}
+        <div>
+          <button class="btn-verify" onclick="verifyDonation('${d.id}')">✅ Verifikasi</button>
+          <button class="btn-reject" onclick="rejectDonation('${d.id}')">❌ Tolak</button>
+        </div>`;
+      list.appendChild(div);
+    });
+  } catch(e) {
+    list.innerHTML = '<div class="empty-list">Error memuat pending</div>';
+    console.error(e);
+  }
+}
+
+async function saveGoal() {
+  const title = document.getElementById('goal-title').value.trim() || '🎯 Goal Bulan Ini';
+  const desc = document.getElementById('goal-desc').value.trim();
+  const target = parseInt(document.getElementById('goal-target').value) || 1500000;
+  try {
+    await setDoc(doc(db, 'settings', 'profile'), { goalTitle: title, goalDesc: desc, goalTarget: target }, { merge: true });
+    toast('💾 Goal berhasil disimpan!');
+  } catch(e) {
+    toast('❌ Gagal simpan goal: ' + e.message);
+  }
+}
+
+async function saveProfile() {
+  const bio = document.getElementById('profile-bio-input') ? document.getElementById('profile-bio-input').value.trim() : '';
+  try {
+    await setDoc(doc(db, 'settings', 'profile'), { bio }, { merge: true });
+    toast('💾 Profil berhasil disimpan!');
+  } catch(e) {
+    toast('❌ Gagal simpan profil: ' + e.message);
+  }
+}
+
+async function verifyDonation(id) {
+  if (!confirm('Verifikasi donasi ini?')) return;
+  try {
+    const pendSnap = await getDoc(doc(db, 'pending', id));
+    if (!pendSnap.exists()) { toast('❌ Data tidak ditemukan'); return; }
+    const p = pendSnap.data();
+
+    const batch = writeBatch(db);
+
+    // Add to donations (simpan pendingId agar index.html bisa query by ID unik)
+    const donRef = doc(collection(db, 'donations'));
+    batch.set(donRef, { name: p.name, amt: p.amt, msg: p.msg||'', email: p.email||'', emoji: p.emoji||'💛', ts: Date.now(), createdAt: serverTimestamp(), pendingId: id });
+
+    // Remove from pending
+    batch.delete(doc(db, 'pending', id));
+
+    // Update stats
+    const statsRef = doc(db, 'settings', 'stats');
+    const statsSnap = await getDoc(statsRef);
+    const current = statsSnap.exists() ? statsSnap.data() : { totalAmount: 0, totalDonations: 0, supporters: [] };
+    const supporters = current.supporters || [];
+    if (!supporters.includes(p.name.toLowerCase())) supporters.push(p.name.toLowerCase());
+    batch.set(statsRef, {
+      totalAmount: (current.totalAmount || 0) + (p.amt || 0),
+      totalDonations: (current.totalDonations || 0) + 1,
+      supporters
+    }, { merge: true });
+
+    await batch.commit();
+    toast('✅ Donasi berhasil diverifikasi!');
+    loadAdminData();
+    // startPendingListener sudah handle realtime update, tidak perlu loadPending() manual
+  } catch(e) {
+    console.error(e);
+    if (e.code === 'permission-denied') toast('❌ Akses ditolak. Pastikan kamu login sebagai admin');
+    else if (!navigator.onLine) toast('❌ Tidak ada koneksi internet');
+    else toast('❌ Gagal verifikasi: ' + e.message);
+  }
+}
+
+async function rejectDonation(id) {
+  if (!confirm('Tolak donasi ini?')) return;
+  try {
+    const pendSnap = await getDoc(doc(db, 'pending', id));
+    if (!pendSnap.exists()) { toast('❌ Data tidak ditemukan'); return; }
+    const p = pendSnap.data();
+
+    const batch = writeBatch(db);
+    // Move to rejected (simpan pendingId agar index.html bisa query by ID unik)
+    const rejRef = doc(collection(db, 'rejected'));
+    batch.set(rejRef, { ...p, pendingId: id, rejectedAt: Date.now(), createdAt: serverTimestamp() });
+    // Delete from pending
+    batch.delete(doc(db, 'pending', id));
+
+    await batch.commit();
+
+    // Hapus gambar dari Cloudinary jika publicId tersedia
+    if (p.imgPublicId) {
+      try {
+        // Cloudinary unsigned delete via endpoint destroy (butuh signed request untuk production)
+        // Untuk unsigned preset, gambar di folder 'bukti' bisa dihapus via API signed
+        // Sementara ini, kita log saja — hapus manual di Cloudinary dashboard jika perlu
+        console.info('Gambar Cloudinary perlu dihapus manual:', p.imgPublicId);
+      } catch(e) {
+        console.warn('Gagal hapus gambar Cloudinary:', e);
+      }
+    } else if (p.imgDeleteUrl) {
+      // Fallback untuk pending lama yang masih pakai ImgBB
+      try {
+        await fetch(p.imgDeleteUrl, { method: 'GET', mode: 'no-cors' });
+      } catch(e) {
+        console.warn('Gagal hapus gambar ImgBB:', e);
+      }
+    }
+
+    toast('❌ Donasi ditolak & disimpan di riwayat');
+    // startPendingListener sudah handle realtime update, tidak perlu loadPending() manual
+    loadRejected();
+  } catch(e) {
+    toast('❌ Error: ' + e.message);
+    console.error(e);
+  }
+}
+
+async function deleteDonation(id, amt, name) {
+  if (!confirm('Hapus donasi dari ' + name + '?')) return;
+  try {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'donations', id));
+
+    // Update stats
+    const statsRef = doc(db, 'settings', 'stats');
+    const statsSnap = await getDoc(statsRef);
+    if (statsSnap.exists()) {
+      const s = statsSnap.data();
+      // Cek apakah masih ada donasi lain dari nama yang sama
+      const otherSnap = await getDocs(query(collection(db, 'donations'), where('name', '==', name), limit(2)));
+      const stillHasOther = otherSnap.docs.filter(d => d.id !== id).length > 0;
+      let supporters = s.supporters || [];
+      if (!stillHasOther) supporters = supporters.filter(n => n !== name.toLowerCase());
+      batch.set(statsRef, {
+        totalAmount: Math.max(0, (s.totalAmount||0) - amt),
+        totalDonations: Math.max(0, (s.totalDonations||0) - 1),
+        supporters
+      }, { merge: true });
+    }
+
+    await batch.commit();
+    toast('🗑️ Donasi dihapus');
+    loadAdminData();
+  } catch(e) {
+    toast('❌ Error: ' + e.message);
+  }
+}
+
+async function clearDonations() {
+  if (!confirm('Hapus SEMUA donasi? Ini tidak bisa dibatalkan!')) return;
+  const typed = prompt('Ketik "HAPUS" untuk konfirmasi penghapusan semua donasi:');
+  if (typed !== 'HAPUS') { toast('⚠️ Penghapusan dibatalkan'); return; }
+  try {
+    const snap = await getDocs(collection(db, 'donations'));
+    if (snap.empty) { toast('⚠️ Tidak ada donasi untuk dihapus'); return; }
+    // Firestore writeBatch max 500 operasi — proses per chunk
+    const CHUNK = 499;
+    const docs = snap.docs;
+    for (let i = 0; i < docs.length; i += CHUNK) {
+      const batch = writeBatch(db);
+      docs.slice(i, i + CHUNK).forEach(d => batch.delete(d.ref));
+      if (i === 0) {
+        batch.set(doc(db, 'settings', 'stats'), { totalAmount: 0, totalDonations: 0, supporters: [] }, { merge: true });
+      }
+      await batch.commit();
+    }
+    toast('🗑️ Semua donasi dihapus');
+    loadAdminData();
+  } catch(e) {
+    toast('❌ Error: ' + e.message);
+  }
+}
+
+async function loadRejected() {
+  const list = document.getElementById('rejected-list');
+  if (!list) return;
+  try {
+    const snap = await getDocs(query(collection(db, 'rejected'), orderBy('rejectedAt', 'desc'), limit(30)));
+    if (snap.empty) { list.innerHTML = '<div class="empty-list">Belum ada donasi ditolak</div>'; return; }
+    list.innerHTML = '';
+    snap.forEach(d => {
+      const r = d.data();
+      const div = document.createElement('div');
+      div.className = 'don-item';
+      div.innerHTML = `<div><div class="don-name" style="color:var(--text3)">${esc(r.name)}</div><div class="don-time">Ditolak ${timeAgo(r.rejectedAt)}</div></div><div class="don-amt" style="color:var(--text3)">Rp ${(r.amt||0).toLocaleString('id-ID')}</div>`;
+      list.appendChild(div);
+    });
+  } catch(e) { list.innerHTML = '<div class="empty-list">Error memuat riwayat</div>'; }
+}
+
+async function exportCSV() {
+  try {
+    const snap = await getDocs(query(collection(db, 'donations'), orderBy('ts', 'desc')));
+    if (snap.empty) { toast('⚠️ Belum ada data donasi'); return; }
+    const rows = [['Nama','Email','Nominal','Pesan','Waktu']];
+    snap.forEach(d => {
+      const data = d.data();
+      const tgl = data.ts ? new Date(data.ts).toLocaleString('id-ID') : '-';
+      rows.push([data.name||'-', data.email||'-', data.amt||0, data.msg||'-', tgl]);
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download='donasi_voidra.csv'; a.click();
+    URL.revokeObjectURL(url);
+    toast('📥 CSV berhasil diunduh!');
+  } catch(e) { toast('❌ Error: ' + e.message); }
+}
+
+async function exportBackup() {
+  try {
+    const [donSnap, pendSnap, rejSnap, profileSnap, statsSnap] = await Promise.all([
+      getDocs(collection(db, 'donations')),
+      getDocs(collection(db, 'pending')),
+      getDocs(collection(db, 'rejected')),
+      getDoc(doc(db, 'settings', 'profile')),
+      getDoc(doc(db, 'settings', 'stats'))
+    ]);
+    const toArr = (snap) => { const arr = []; snap.forEach(d => arr.push({id: d.id, ...d.data()})); return arr; };
+    const data = {
+      exported: new Date().toISOString(),
+      donations: toArr(donSnap),
+      pending: toArr(pendSnap),
+      rejected: toArr(rejSnap),
+      profile: profileSnap.exists() ? profileSnap.data() : {},
+      stats: statsSnap.exists() ? statsSnap.data() : {}
+    };
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download='voidra_backup_'+new Date().toLocaleDateString('id-ID').replace(/\//g,'-')+'.json'; a.click();
+    URL.revokeObjectURL(url);
+    toast('💾 Backup berhasil diunduh!');
+  } catch(e) { toast('❌ Error backup: ' + e.message); }
+}
+
+async function restoreBackup() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!confirm('Restore backup? Data lama akan tertimpa!')) return;
+
+      // Helper: commit dalam chunk max 490 ops (limit Firestore = 500)
+      async function commitInChunks(ops) {
+        const CHUNK = 490;
+        for (let i = 0; i < ops.length; i += CHUNK) {
+          const batch = writeBatch(db);
+          ops.slice(i, i + CHUNK).forEach(fn => fn(batch));
+          await batch.commit();
+        }
+      }
+
+      const ops = [];
+      if (data.donations) data.donations.forEach(({ id, ...rest }) => ops.push(b => b.set(doc(db, 'donations', id), rest)));
+      if (data.rejected)  data.rejected.forEach(({ id, ...rest })  => ops.push(b => b.set(doc(db, 'rejected', id), rest)));
+      if (data.profile)   ops.push(b => b.set(doc(db, 'settings', 'profile'), data.profile));
+      if (data.stats)     ops.push(b => b.set(doc(db, 'settings', 'stats'), data.stats));
+
+      await commitInChunks(ops);
+      toast('✅ Backup berhasil direstore!');
+      loadAdminData();
+      // startPendingListener sudah handle realtime update, tidak perlu loadPending() manual
+    } catch(e) {
+      toast('❌ Gagal restore: ' + e.message);
+    }
+  };
+  input.click();
+}
+
+// Realtime listener untuk pending
+let unsubPending = null;
+let _prevPendingCount = -1; // -1 = belum pernah load
+function startPendingListener() {
+  if (unsubPending) unsubPending();
+  const pendQ = query(collection(db, 'pending'), orderBy('createdAt', 'desc'));
+  unsubPending = onSnapshot(pendQ, (snap) => {
+    const list = document.getElementById('pending-list');
+    const badge = document.getElementById('pending-badge');
+    badge.textContent = snap.size;
+
+    // Notifikasi visual jika ada pending baru (bukan saat pertama load)
+    if (_prevPendingCount >= 0 && snap.size > _prevPendingCount) {
+      const diff = snap.size - _prevPendingCount;
+      toast('🔔 ' + diff + ' donasi baru menunggu verifikasi!');
+      badge.style.animation = 'none';
+      badge.style.background = '#DC2626';
+      badge.style.color = '#fff';
+      setTimeout(() => {
+        badge.style.background = '#FEF3C7';
+        badge.style.color = '#D97706';
+      }, 3000);
+    }
+    _prevPendingCount = snap.size;
+    if (snap.empty) {
+      list.innerHTML = '<div class="empty-list">Tidak ada donasi pending</div>';
+      return;
+    }
+    list.innerHTML = '';
+    snap.forEach(d => {
+      const p = d.data();
+      const div = document.createElement('div');
+      div.className = 'don-item';
+      div.id = 'pending-item-' + d.id;
+      div.style.cssText = 'flex-direction:column;align-items:flex-start;gap:8px';
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:flex-start">
+          <div>
+            <div class="don-name">${esc(p.name)}</div>
+            <div class="don-time" title="${fullDate(p.ts)}" style="cursor:default">${timeAgo(p.ts)}</div>
+            ${p.email ? `<div style="font-size:0.75rem;color:var(--text3)">${esc(p.email)}</div>` : ''}
+            ${p.msg ? `<div style="font-size:0.78rem;color:var(--text2);margin-top:4px">${esc(p.msg)}</div>` : ''}
+          </div>
+          <span class="don-amt">Rp ${(p.amt||0).toLocaleString('id-ID')}</span>
+        </div>
+        ${p.imgUrl ? `<img class="pending-img" src="${esc(encodeURI(p.imgUrl))}" alt="Bukti TF" onclick="window.open('${esc(encodeURI(p.imgUrl))}','_blank')">` : ''}
+        <div>
+          <button class="btn-verify" onclick="verifyDonation('${d.id}')">✅ Verifikasi</button>
+          <button class="btn-reject" onclick="rejectDonation('${d.id}')">❌ Tolak</button>
+        </div>`;
+      list.appendChild(div);
+    });
+  }, (e) => {
+    console.error('pending listener error', e);
+  });
+}
+
+// EXPOSE
+window.doLogin = doLogin;
+window.doLogout = doLogout;
+window.saveGoal = saveGoal;
+window.saveProfile = saveProfile;
+window.verifyDonation = verifyDonation;
+window.rejectDonation = rejectDonation;
+window.deleteDonation = deleteDonation;
+window.clearDonations = clearDonations;
+window.exportCSV = exportCSV;
+window.exportBackup = exportBackup;
+window.restoreBackup = restoreBackup;
+window.loadRejected = loadRejected;
+window.startPendingListener = startPendingListener;
+window.loadDonationList = loadDonationList;
+</script>
+</body>
+</html>
