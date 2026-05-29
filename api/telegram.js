@@ -69,10 +69,8 @@ export default async function handler(req, res) {
         }, { merge: true });
         // Update pending TERAKHIR (trigger listener frontend)
         await pendingRef.update({ status: 'verified' });
-        // Hapus dari pending setelah 5 detik (beri waktu frontend tangkap perubahan)
-        setTimeout(async () => {
-          try { await pendingRef.delete(); } catch(e) {}
-        }, 5000);
+        // Hapus dari pending langsung (serverless tidak support setTimeout)
+        try { await pendingRef.delete(); } catch(e) {}
 
         await answerCallback(cbId, 'Donasi berhasil diverifikasi!');
         await tgSend(`*Donasi Diverifikasi!*\n\n*Nama:* ${pending.name}\n*Nominal:* Rp ${Number(pending.amt).toLocaleString('id-ID')}\nDiverifikasi oleh: ${from.first_name}`);
@@ -80,10 +78,8 @@ export default async function handler(req, res) {
       } else if (action === 'reject') {
         // Update status rejected dulu (trigger listener frontend)
         await pendingRef.update({ status: 'rejected' });
-        // Hapus dari pending setelah 5 detik (beri waktu frontend tangkap perubahan)
-        setTimeout(async () => {
-          try { await pendingRef.delete(); } catch(e) {}
-        }, 5000);
+        // Hapus dari pending langsung (serverless tidak support setTimeout)
+        try { await pendingRef.delete(); } catch(e) {}
 
         await answerCallback(cbId, 'Donasi ditolak.');
         await tgSend(`*Donasi Ditolak*\n\n*Nama:* ${pending.name}\n*Nominal:* Rp ${Number(pending.amt).toLocaleString('id-ID')}\nDitolak oleh: ${from.first_name}`);
