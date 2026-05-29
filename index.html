@@ -1117,24 +1117,17 @@ async function checkIfVerified(name, amt, pendingId, retryCount = 0) {
   if (pendingId && window._activePendingId !== pendingId) return;
   if (_unsubStatus) { _unsubStatus(); _unsubStatus = null; }
   try {
-    // Cek donations & rejected secara paralel — tidak perlu tunggu retry
     const donQ = pendingId
       ? query(collection(db, 'donations'), where('pendingId', '==', pendingId), limit(1))
       : query(collection(db, 'donations'), where('name', '==', name), where('amt', '==', amt), orderBy('ts', 'desc'), limit(1));
-    const rejQ = pendingId
-      ? query(collection(db, 'rejected'), where('pendingId', '==', pendingId), limit(1))
-      : null;
 
-    const [donSnap, rejSnap] = await Promise.all([
-      getDocs(donQ),
-      rejQ ? getDocs(rejQ) : Promise.resolve(null)
-    ]);
+    const donSnap = await getDocs(donQ);
 
     // Firestore propagasi bisa butuh waktu setelah admin verifikasi.
-    // Kalau belum ada di donations/rejected, retry sampai 6x (maks ~12 detik) sebelum menyerah.
+    // Kalau belum ada di donations, retry sampai 6x (maks ~12 detik) sebelum menyerah.
     const MAX_RETRY = 6;
     const RETRY_DELAYS = [500, 1000, 2000, 3000, 3000, 3000]; // ms
-    if (donSnap.empty && (!rejSnap || rejSnap.empty) && retryCount < MAX_RETRY) {
+    if (donSnap.empty && retryCount < MAX_RETRY) {
       if (pendingId && window._activePendingId !== pendingId) return;
       // Cek dulu apakah pending-nya masih ada (kalau sudah hilang, berarti admin verifikasi tapi Firestore belum propagasi)
       setTimeout(() => checkIfVerified(name, amt, pendingId, retryCount + 1), RETRY_DELAYS[retryCount]);
@@ -1163,30 +1156,8 @@ async function checkIfVerified(name, amt, pendingId, retryCount = 0) {
       return;
     }
 
-    if (rejSnap && !rejSnap.empty) {
-      // Donasi ditolak
-      window._activePendingId = null;
-      const displayName = name || 'Kamu';
-      document.getElementById('status-anim').textContent = '❌';
-      document.getElementById('status-title').textContent = 'Donasi Ditolak';
-      document.getElementById('modal-body').textContent =
-        'Maaf ' + displayName + ', bukti transfer kamu tidak bisa diverifikasi. Silakan hubungi admin 🙏';
-      const _rl2 = document.getElementById('status-link-wrap');
-      if (_rl2) { const _hu2 = window.location.origin + window.location.pathname; _rl2.innerHTML = '<div style="margin-top:14px;background:#FEF2F2;border:1px solid rgba(220,38,38,0.2);border-radius:var(--radius-xs);padding:10px 12px;font-size:0.75rem;color:#DC2626;line-height:1.6">❌ Donasi ditolak. <a href="' + _hu2 + '" style="color:#DC2626;font-weight:700;text-decoration:underline">Kembali ke halaman utama →</a></div>'; }
-      document.getElementById('modal-success').style.display = 'block';
-      document.getElementById('overlay').classList.add('open');
-      ['step-1','step-2','step-3'].forEach((id,i) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.querySelector('div').style.background = '#F2F1EE';
-        el.querySelector('div').style.color = '#B8B4AD';
-        el.querySelector('div').textContent = i+1;
-        el.querySelector('span').style.color = '#B8B4AD';
-      });
-      return;
-    }
 
-    // Belum ada di donations/rejected — masih pending
+    // Belum ada di donations — masih pending
     // Tampilkan status "menunggu verifikasi" dan aktifkan realtime listener
     document.getElementById('status-anim').textContent = '⏳';
     document.getElementById('status-title').textContent = 'Menunggu Verifikasi';
@@ -1387,9 +1358,8 @@ initCharCounters();
     async function tryLoad() {
       try {
         await new Promise(r => setTimeout(r, 300));
-        const [donSnap, rejSnap, pendSnap] = await Promise.all([
+        const [donSnap, pendSnap] = await Promise.all([
           getDocs(query(collection(db, 'donations'), where('pendingId', '==', cekId), limit(1))),
-          getDocs(query(collection(db, 'rejected'), where('pendingId', '==', cekId), limit(1))),
           getDoc(doc(db, 'pending', cekId))
         ]);
 
@@ -1405,12 +1375,6 @@ initCharCounters();
             const homeUrl = window.location.origin + window.location.pathname;
             linkElApproved.innerHTML = '<div style="margin-top:10px;background:var(--teal-soft);border:1px solid rgba(13,148,136,0.2);border-radius:var(--radius-xs);padding:8px 12px;font-size:0.72rem;color:var(--teal)">🎉 Namamu sudah muncul di feed! <a href="' + homeUrl + '" style="color:var(--teal);font-weight:700;text-decoration:underline">Lihat halaman utama →</a></div>';
           }
-        } else if (!rejSnap.empty) {
-          // Ditolak
-          window._activePendingId = null;
-          document.getElementById('status-anim').textContent = '❌';
-          document.getElementById('status-title').textContent = 'Donasi Ditolak';
-          document.getElementById('modal-body').textContent = 'Bukti transfer tidak bisa diverifikasi. Silakan hubungi admin 🙏';
         } else if (pendSnap.exists()) {
           // Masih pending — aktifkan realtime listener agar auto-update saat admin verifikasi
           const p = pendSnap.data();

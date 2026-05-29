@@ -169,15 +169,6 @@ textarea.inp{resize:none;min-height:90px;line-height:1.6;margin-bottom:0}
     </div>
   </div>
 
-  <!-- Riwayat Ditolak -->
-  <div class="section-card">
-    <div class="section-title">❌ Riwayat Ditolak</div>
-    <div class="section-desc">Donasi yang pernah ditolak</div>
-    <div class="donation-list" id="rejected-list">
-      <div class="empty-list">Belum ada donasi ditolak</div>
-    </div>
-  </div>
-
   <!-- Backup & Restore -->
   <div class="section-card">
     <div class="section-title">💾 Backup & Restore</div>
@@ -358,9 +349,6 @@ async function loadAdminData() {
 
     // Donations list dengan pagination
     await loadDonationList(false);
-
-    // Rejected — Bug 4 fix: tambahkan await agar error bisa ditangkap
-    await loadRejected();
   } catch(e) {
     console.error('loadAdminData error', e);
     toast('❌ Gagal memuat data: ' + e.message);
@@ -535,27 +523,17 @@ async function rejectDonation(id) {
     if (!pendSnap.exists()) { toast('❌ Data tidak ditemukan'); return; }
     const p = pendSnap.data();
 
-    const batch = writeBatch(db);
-    // Move to rejected (simpan pendingId agar index.html bisa query by ID unik)
-    const rejRef = doc(collection(db, 'rejected'));
-    batch.set(rejRef, { ...p, pendingId: id, rejectedAt: Date.now(), createdAt: serverTimestamp() });
-    // Delete from pending
-    batch.delete(doc(db, 'pending', id));
+    // Update status rejected dulu (beri waktu frontend tangkap perubahan via listener)
+    await updateDoc(doc(db, 'pending', id), { status: 'rejected' });
+    // Hapus dari pending setelah 5 detik
+    setTimeout(async () => {
+      try { await deleteDoc(doc(db, 'pending', id)); } catch(e) {}
+    }, 5000);
 
-    await batch.commit();
-
-    // Hapus gambar dari Cloudinary jika publicId tersedia
+    // Hapus gambar
     if (p.imgPublicId) {
-      try {
-        // Cloudinary unsigned delete via endpoint destroy (butuh signed request untuk production)
-        // Untuk unsigned preset, gambar di folder 'bukti' bisa dihapus via API signed
-        // Sementara ini, kita log saja — hapus manual di Cloudinary dashboard jika perlu
-        console.info('Gambar Cloudinary perlu dihapus manual:', p.imgPublicId);
-      } catch(e) {
-        console.warn('Gagal hapus gambar Cloudinary:', e);
-      }
+      console.info('Gambar Cloudinary perlu dihapus manual:', p.imgPublicId);
     } else if (p.imgDeleteUrl) {
-      // Fallback untuk pending lama yang masih pakai ImgBB
       try {
         await fetch(p.imgDeleteUrl, { method: 'GET', mode: 'no-cors' });
       } catch(e) {
@@ -563,9 +541,7 @@ async function rejectDonation(id) {
       }
     }
 
-    toast('❌ Donasi ditolak & disimpan di riwayat');
-    // startPendingListener sudah handle realtime update, tidak perlu loadPending() manual
-    loadRejected();
+    toast('❌ Donasi ditolak');
   } catch(e) {
     toast('❌ Error: ' + e.message);
     console.error(e);
@@ -628,23 +604,6 @@ async function clearDonations() {
   }
 }
 
-async function loadRejected() {
-  const list = document.getElementById('rejected-list');
-  if (!list) return;
-  try {
-    const snap = await getDocs(query(collection(db, 'rejected'), orderBy('rejectedAt', 'desc'), limit(30)));
-    if (snap.empty) { list.innerHTML = '<div class="empty-list">Belum ada donasi ditolak</div>'; return; }
-    list.innerHTML = '';
-    snap.forEach(d => {
-      const r = d.data();
-      const div = document.createElement('div');
-      div.className = 'don-item';
-      div.innerHTML = `<div><div class="don-name" style="color:var(--text3)">${esc(r.name)}</div><div class="don-time">Ditolak ${timeAgo(r.rejectedAt)}</div></div><div class="don-amt" style="color:var(--text3)">Rp ${(r.amt||0).toLocaleString('id-ID')}</div>`;
-      list.appendChild(div);
-    });
-  } catch(e) { list.innerHTML = '<div class="empty-list">Error memuat riwayat</div>'; }
-}
-
 async function exportCSV() {
   try {
     const snap = await getDocs(query(collection(db, 'donations'), orderBy('ts', 'desc')));
@@ -667,10 +626,9 @@ async function exportCSV() {
 
 async function exportBackup() {
   try {
-    const [donSnap, pendSnap, rejSnap, profileSnap, statsSnap] = await Promise.all([
+    const [donSnap, pendSnap, profileSnap, statsSnap] = await Promise.all([
       getDocs(collection(db, 'donations')),
       getDocs(collection(db, 'pending')),
-      getDocs(collection(db, 'rejected')),
       getDoc(doc(db, 'settings', 'profile')),
       getDoc(doc(db, 'settings', 'stats'))
     ]);
@@ -679,7 +637,6 @@ async function exportBackup() {
       exported: new Date().toISOString(),
       donations: toArr(donSnap),
       pending: toArr(pendSnap),
-      rejected: toArr(rejSnap),
       profile: profileSnap.exists() ? profileSnap.data() : {},
       stats: statsSnap.exists() ? statsSnap.data() : {}
     };
@@ -716,7 +673,6 @@ async function restoreBackup() {
 
       const ops = [];
       if (data.donations) data.donations.forEach(({ id, ...rest }) => ops.push(b => b.set(doc(db, 'donations', id), rest)));
-      if (data.rejected)  data.rejected.forEach(({ id, ...rest })  => ops.push(b => b.set(doc(db, 'rejected', id), rest)));
       if (data.profile)   ops.push(b => b.set(doc(db, 'settings', 'profile'), data.profile));
       if (data.stats)     ops.push(b => b.set(doc(db, 'settings', 'stats'), data.stats));
 
@@ -800,7 +756,6 @@ window.clearDonations = clearDonations;
 window.exportCSV = exportCSV;
 window.exportBackup = exportBackup;
 window.restoreBackup = restoreBackup;
-window.loadRejected = loadRejected;
 window.startPendingListener = startPendingListener;
 window.loadDonationList = loadDonationList;
 </script>
