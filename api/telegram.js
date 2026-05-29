@@ -69,6 +69,10 @@ export default async function handler(req, res) {
         }, { merge: true });
         // Update pending TERAKHIR (trigger listener frontend)
         await pendingRef.update({ status: 'verified' });
+        // Hapus dari pending setelah 5 detik (beri waktu frontend tangkap perubahan)
+        setTimeout(async () => {
+          try { await pendingRef.delete(); } catch(e) {}
+        }, 5000);
 
         await answerCallback(cbId, 'Donasi berhasil diverifikasi!');
         await tgSend(`*Donasi Diverifikasi!*\n\n*Nama:* ${pending.name}\n*Nominal:* Rp ${Number(pending.amt).toLocaleString('id-ID')}\nDiverifikasi oleh: ${from.first_name}`);
