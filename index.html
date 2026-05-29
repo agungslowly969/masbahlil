@@ -410,7 +410,8 @@ input[type="checkbox"]:focus{outline:none;box-shadow:none;}
     <div id="modal-upload" style="display:none">
       <div class="modal-anim">📸</div>
       <h3 style="margin-bottom:6px">Upload Bukti Transfer</h3>
-      <p style="font-size:0.82rem;color:var(--text2);margin-bottom:16px;line-height:1.6">Screenshot bukti pembayaran kamu agar donasi bisa diverifikasi admin 🙏</p>
+      <p style="font-size:0.82rem;color:var(--text2);margin-bottom:4px;line-height:1.6">Screenshot bukti pembayaran kamu agar donasi bisa diverifikasi admin 🙏</p>
+      <p style="font-size:0.75rem;color:#DC2626;font-weight:700;margin-bottom:14px">⚠️ Wajib diisi — donasi tidak bisa diproses tanpa bukti transfer</p>
       <div class="upload-area" id="upload-area" onclick="document.getElementById('bukti-input').click()">
         <input type="file" id="bukti-input" accept="image/*" onchange="onBuktiSelected(this)" style="display:none">
         <div id="upload-placeholder">
@@ -423,7 +424,7 @@ input[type="checkbox"]:focus{outline:none;box-shadow:none;}
         <div class="upload-progress-bar" id="upload-progress-bar"></div>
       </div>
       <div id="upload-filename" style="font-size:0.75rem;color:var(--teal);font-weight:600;margin-bottom:12px;display:none"></div>
-      <button class="modal-close" id="btn-kirim-bukti" onclick="submitWithBukti()" style="width:100%;margin-bottom:8px">Kirim Donasi 💛</button>
+      <button class="modal-close" id="btn-kirim-bukti" onclick="submitWithBukti()" style="width:100%;margin-bottom:8px;opacity:0.45;cursor:not-allowed" disabled>📎 Pilih bukti transfer dulu</button>
       <button onclick="closeModal()" style="background:none;border:none;color:var(--text3);font-size:0.8rem;cursor:pointer;font-family:inherit">Batal</button>
     </div>
     <!-- Step 3: Status -->
@@ -687,6 +688,12 @@ function showUploadStep() {
   document.getElementById('upload-filename').style.display = 'none';
   document.getElementById('upload-progress').style.display = 'none';
   document.getElementById('upload-progress-bar').style.width = '0';
+  // Reset tombol kirim ke disabled
+  const btn = document.getElementById('btn-kirim-bukti');
+  btn.disabled = true;
+  btn.style.opacity = '0.45';
+  btn.style.cursor = 'not-allowed';
+  btn.textContent = '📎 Pilih bukti transfer dulu';
 }
 
 function onBuktiSelected(input) {
@@ -704,6 +711,12 @@ function onBuktiSelected(input) {
     const fn = document.getElementById('upload-filename');
     fn.textContent = '✅ ' + file.name;
     fn.style.display = 'block';
+    // Aktifkan tombol kirim setelah file dipilih
+    const btn = document.getElementById('btn-kirim-bukti');
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+    btn.textContent = 'Kirim Donasi 💛';
   };
   reader.readAsDataURL(file);
 }
