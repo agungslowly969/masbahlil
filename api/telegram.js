@@ -43,12 +43,16 @@ export default async function handler(req, res) {
       const db = getDb();
       const pendingRef = db.collection('pending').doc(pendingId);
       const pendingSnap = await pendingRef.get();
+
       if (!pendingSnap.exists) {
         await answerCallback(cbId, 'Donasi tidak ditemukan atau sudah diproses.');
         return res.status(200).json({ ok: true });
       }
+
       const pending = pendingSnap.data();
+
       if (action === 'verify') {
+        // Simpan ke donations dengan pendingId DULU
         const donationRef = db.collection('donations').doc(pendingId);
         await donationRef.set({
           ...pending,
@@ -57,16 +61,26 @@ export default async function handler(req, res) {
           verifiedAt: FieldValue.serverTimestamp(),
           verifiedBy: `telegram:${from.first_name}`,
         });
+        // Update statistik
         const statsRef = db.collection('settings').doc('stats');
         await statsRef.set({
           totalDonations: FieldValue.increment(1),
           totalAmount: FieldValue.increment(Number(pending.amt) || 0),
         }, { merge: true });
+        // Update pending TERAKHIR (trigger listener frontend)
         await pendingRef.update({ status: 'verified' });
+
         await answerCallback(cbId, 'Donasi berhasil diverifikasi!');
         await tgSend(`*Donasi Diverifikasi!*\n\n*Nama:* ${pending.name}\n*Nominal:* Rp ${Number(pending.amt).toLocaleString('id-ID')}\nDiverifikasi oleh: ${from.first_name}`);
+
       } else if (action === 'reject') {
+        // Update status rejected dulu (trigger listener frontend)
         await pendingRef.update({ status: 'rejected' });
+        // Hapus dari pending setelah 5 detik (beri waktu frontend tangkap perubahan)
+        setTimeout(async () => {
+          try { await pendingRef.delete(); } catch(e) {}
+        }, 5000);
+
         await answerCallback(cbId, 'Donasi ditolak.');
         await tgSend(`*Donasi Ditolak*\n\n*Nama:* ${pending.name}\n*Nominal:* Rp ${Number(pending.amt).toLocaleString('id-ID')}\nDitolak oleh: ${from.first_name}`);
       }
