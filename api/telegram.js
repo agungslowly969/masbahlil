@@ -17,6 +17,37 @@ function getDb() {
 const TG_TOKEN   = process.env.TG_TOKEN;
 const TG_CHAT_ID = process.env.TG_CHAT_ID;
 
+const CLD_CLOUD  = process.env.CLD_CLOUD  || 'dgp84bfby';
+const CLD_KEY    = process.env.CLD_KEY    || '484725288299273';
+const CLD_SECRET = process.env.CLD_SECRET || 'mi9vq327N3HuoJ3yH0gmSY9LWRM';
+
+async function deleteCloudinaryImage(publicId) {
+  if (!publicId) return;
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const str = `public_id=${publicId}&timestamp=${timestamp}${CLD_SECRET}`;
+    // SHA-1 signature
+    const msgBuffer = new TextEncoder().encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const signature = hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+
+    const form = new URLSearchParams();
+    form.append('public_id', publicId);
+    form.append('timestamp', timestamp);
+    form.append('api_key', CLD_KEY);
+    form.append('signature', signature);
+
+    await fetch(`https://api.cloudinary.com/v1_1/${CLD_CLOUD}/image/destroy`, {
+      method: 'POST',
+      body: form,
+    });
+    console.log('Cloudinary image deleted:', publicId);
+  } catch(e) {
+    console.warn('Cloudinary delete failed:', e.message);
+  }
+}
+
 async function tgSend(text) {
   await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
     method: 'POST',
@@ -80,6 +111,9 @@ export default async function handler(req, res) {
         await pendingRef.update({ status: 'rejected' });
         // Hapus dari pending langsung (serverless tidak support setTimeout)
         try { await pendingRef.delete(); } catch(e) {}
+
+        // Hapus foto bukti dari Cloudinary
+        if (pending.imgPublicId) await deleteCloudinaryImage(pending.imgPublicId);
 
         await answerCallback(cbId, 'Donasi ditolak.');
         await tgSend(`*Donasi Ditolak*\n\n*Nama:* ${pending.name}\n*Nominal:* Rp ${Number(pending.amt).toLocaleString('id-ID')}\nDitolak oleh: ${from.first_name}`);
