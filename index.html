@@ -11,10 +11,10 @@
 
 <!-- Open Graph (WhatsApp, Facebook, Telegram) -->
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://surya17.vercel.app/">
+<meta property="og:url" content="https://voidrastudio.vercel.app/">
 <meta property="og:title" content="Voidra Studio — Traktir Kopi ☕">
 <meta property="og:description" content="Suka dengan konten Voidra Studio? Traktir kopi, kirim pesan semangat, atau ajukan request kreatif. Setiap dukungan sangat berarti 💛">
-<meta property="og:image" content="https://surya17.vercel.app/og-image.jpg">
+<meta property="og:image" content="https://voidrastudio.vercel.app/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="id_ID">
@@ -22,10 +22,10 @@
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:url" content="https://surya17.vercel.app/">
+<meta name="twitter:url" content="https://voidrastudio.vercel.app/">
 <meta name="twitter:title" content="Voidra Studio — Traktir Kopi ☕">
 <meta name="twitter:description" content="Suka dengan konten Voidra Studio? Traktir kopi, kirim pesan semangat, atau ajukan request kreatif. Setiap dukungan sangat berarti 💛">
-<meta name="twitter:image" content="https://surya17.vercel.app/og-image.jpg">
+<meta name="twitter:image" content="https://voidrastudio.vercel.app/og-image.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -442,6 +442,7 @@ input[type="checkbox"]:focus{outline:none;box-shadow:none;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, getDocs, getDoc, setDoc, onSnapshot, query, orderBy, limit, startAfter, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBj8jLp7CeHSHIeDp1itB85v6n6q0KG9K4",
@@ -456,6 +457,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const analytics = getAnalytics(app);
 
 // =====================
 // ANONYMOUS AUTH
@@ -811,6 +813,7 @@ async function submitWithBukti() {
 
     toast('📸 Bukti berhasil diupload!');
     if (pendingId) startStatusListener(pendingId, name, amt);
+    try { logEvent(analytics, 'donation_submitted', { value: amt, currency: 'IDR' }); } catch(e) {}
   } catch(e) {
     if (!navigator.onLine) {
       toast('⚠️ Tidak ada koneksi internet', '⚠️');
